@@ -1,5 +1,5 @@
 /* Service Worker — cache בסיסי לעבודה offline */
-const CACHE = "rcpt-v3";
+const CACHE = "rcpt-v4";
 const ASSETS = [
   "./",
   "./index.html",
