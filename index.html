@@ -3,111 +3,191 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f766e" />
-  <title>סורק קבלות</title>
+  <meta name="theme-color" content="#0c1116" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>קַבָּלָה · סורק חכם</title>
   <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;700;900&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="app-header">
-    <h1>🧾 סורק קבלות</h1>
-    <span id="storeName" class="store-tag">חנות שלי</span>
-  </header>
+  <div id="toast" class="toast"></div>
 
-  <main id="app">
-    <!-- מסך סורק -->
-    <section id="scannerScreen" class="screen active">
-      <div class="scanner-wrap">
-        <video id="video" playsinline muted></video>
-        <div class="scan-overlay">
-          <div class="scan-frame"></div>
-          <p class="scan-hint">מקם את הברקוד בתוך המסגרת</p>
+  <!-- ============ SCAN VIEW ============ -->
+  <section id="view-scan" class="view active">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">◴</span>
+        <div class="brand-text">
+          <strong id="storeNameLabel">החנות שלי</strong>
+          <small>סורק קבלות חכם</small>
         </div>
-        <div id="scanStatus" class="scan-status">המצלמה כבויה</div>
+      </div>
+      <button id="editStoreBtn" class="icon-btn" aria-label="עריכת חנות">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
+    </header>
+
+    <div class="scanner-stage">
+      <video id="video" playsinline muted></video>
+      <div class="scanner-idle" id="scannerIdle">
+        <div class="idle-glow"></div>
+        <svg class="idle-icon" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M6 12h12"/></svg>
+        <p>הפעל את המצלמה כדי לסרוק ברקוד</p>
+      </div>
+      <div class="reticle" id="reticle" hidden>
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="laser"></div>
+      </div>
+      <div class="scan-pill" id="scanPill" hidden>מחפש ברקוד…</div>
+    </div>
+
+    <div class="scan-actions">
+      <button id="startCamBtn" class="btn btn-accent">
+        <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        הפעל מצלמה
+      </button>
+      <button id="stopCamBtn" class="btn btn-dim hidden">עצור</button>
+      <button id="manualBtn" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        הוספה ידנית
+      </button>
+    </div>
+
+    <!-- floating cart -->
+    <div id="cartBar" class="cart-bar hidden">
+      <div class="cart-bar-info">
+        <span class="cart-bar-count" id="cartBarCount">0 פריטים</span>
+        <strong class="cart-bar-total" id="cartBarTotal">₪0.00</strong>
+      </div>
+      <button id="viewCartBtn" class="btn btn-accent sm">
+        סיום וקבלה
+        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ HISTORY VIEW ============ -->
+  <section id="view-history" class="view">
+    <header class="topbar"><div class="page-title">היסטוריית קבלות</div></header>
+    <div id="historyStats" class="stat-strip"></div>
+    <div id="historyList" class="history-list"></div>
+    <div id="historyEmpty" class="empty-state hidden">
+      <div class="empty-emoji">🧾</div>
+      <p>עדיין אין קבלות.<br>סרוק מוצר כדי להתחיל.</p>
+    </div>
+  </section>
+
+  <!-- ============ CATALOG VIEW ============ -->
+  <section id="view-catalog" class="view">
+    <header class="topbar"><div class="page-title">קטלוג מוצרים משותף</div></header>
+    <div class="search-wrap">
+      <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="catalogSearch" type="search" placeholder="חיפוש לפי שם, מותג או ברקוד…" />
+    </div>
+    <div id="catalogList" class="catalog-grid"></div>
+    <div id="catalogEmpty" class="empty-state hidden">
+      <div class="empty-emoji">📦</div>
+      <p>הקטלוג עוד מתמלא.<br>כל מוצר שתסרוק יצטרף לכאן.</p>
+    </div>
+  </section>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <nav class="tabbar">
+    <button class="tab active" data-view="scan">
+      <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg>
+      <span>סריקה</span>
+    </button>
+    <button class="tab" data-view="history">
+      <svg viewBox="0 0 24 24"><path d="M3 3v5h5M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 3"/></svg>
+      <span>היסטוריה</span>
+    </button>
+    <button class="tab" data-view="catalog">
+      <svg viewBox="0 0 24 24"><path d="M3 9 12 3l9 6M5 10v10h14V10M9 21v-6h6v6"/></svg>
+      <span>קטלוג</span>
+    </button>
+  </nav>
+
+  <!-- ============ ITEM SHEET ============ -->
+  <div id="itemSheet" class="sheet-backdrop hidden">
+    <div class="sheet">
+      <div class="sheet-grip"></div>
+      <div class="sheet-product">
+        <div id="itemImgWrap" class="item-img-wrap">
+          <img id="itemImg" alt="" hidden />
+          <div id="itemImgPlaceholder" class="item-img-ph">📷</div>
+        </div>
+        <div class="sheet-product-meta">
+          <div id="itemBadge" class="src-badge hidden"></div>
+          <h3 id="sheetTitle">פריט חדש</h3>
+          <span id="itemBarcodeView" class="mono-sm"></span>
+        </div>
       </div>
 
-      <div class="scanner-controls">
-        <button id="startCamBtn" class="btn btn-primary">📷 הפעל מצלמה</button>
-        <button id="stopCamBtn" class="btn btn-ghost hidden">⏹ עצור</button>
-        <button id="manualBtn" class="btn btn-ghost">⌨️ הזנה ידנית</button>
-      </div>
-
-      <div class="cart-summary" id="cartSummary">
-        <div class="cart-summary-row">
-          <span>פריטים בעגלה</span>
-          <strong id="cartCount">0</strong>
-        </div>
-        <div class="cart-summary-row total">
-          <span>סה"כ לתשלום</span>
-          <strong id="cartTotal">₪0.00</strong>
-        </div>
-        <button id="goReceiptBtn" class="btn btn-primary full" disabled>צפה בקבלה ←</button>
-      </div>
-    </section>
-
-    <!-- מסך קבלה -->
-    <section id="receiptScreen" class="screen">
-      <div class="receipt-toolbar">
-        <button id="backToScanBtn" class="btn btn-ghost">→ חזרה לסריקה</button>
-        <button id="printBtn" class="btn btn-primary">🖨️ הדפס / שמור</button>
-      </div>
-
-      <div id="receipt" class="receipt">
-        <div class="r-header">
-          <div class="r-store" id="rStore">חנות שלי</div>
-          <div class="r-sub" id="rSub">קבלה / חשבונית מס</div>
-          <div class="r-meta" id="rMeta"></div>
-        </div>
-        <div class="r-divider"></div>
-        <div class="r-cols">
-          <span>פריט</span>
-          <span>סה"כ</span>
-        </div>
-        <div class="r-divider dashed"></div>
-        <div id="rItems" class="r-items"></div>
-        <div class="r-divider dashed"></div>
-        <div class="r-totals">
-          <div class="r-line"><span>מספר פריטים</span><span id="rCount">0</span></div>
-          <div class="r-line"><span>מע"מ (18%) כלול</span><span id="rVat">₪0.00</span></div>
-          <div class="r-line grand"><span>סה"כ לתשלום</span><span id="rTotal">₪0.00</span></div>
-        </div>
-        <div class="r-divider"></div>
-        <div class="r-barcode" id="rBarcode"></div>
-        <div class="r-thanks">תודה ולהתראות! 🙏</div>
-      </div>
-
-      <button id="newReceiptBtn" class="btn btn-danger full">קבלה חדשה (נקה עגלה)</button>
-    </section>
-  </main>
-
-  <!-- מודאל הוספת פריט -->
-  <div id="itemModal" class="modal hidden">
-    <div class="modal-card">
-      <h2 id="modalTitle">פריט נסרק</h2>
-      <div id="capturedPreview" class="captured-preview hidden">
-        <img id="capturedImg" alt="תמונת מוצר" />
-      </div>
-      <label class="field">
-        <span>ברקוד</span>
-        <input id="fBarcode" type="text" inputmode="numeric" placeholder="הזן/סרוק ברקוד" />
-      </label>
-      <label class="field">
-        <span>שם מוצר</span>
-        <input id="fName" type="text" placeholder="לדוגמה: חלב 3%" />
+      <label class="field"><span>שם המוצר</span>
+        <input id="fName" type="text" placeholder="לדוגמה: חלב תנובה 3%" />
       </label>
       <div class="field-row">
-        <label class="field">
-          <span>מחיר (₪)</span>
+        <label class="field"><span>מחיר ₪</span>
           <input id="fPrice" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00" />
         </label>
-        <label class="field">
-          <span>כמות</span>
-          <input id="fQty" type="number" step="1" min="1" value="1" inputmode="numeric" />
-        </label>
+        <div class="field"><span>כמות</span>
+          <div class="stepper">
+            <button type="button" id="qtyMinus">−</button>
+            <input id="fQty" type="number" min="1" value="1" inputmode="numeric" />
+            <button type="button" id="qtyPlus">+</button>
+          </div>
+        </div>
       </div>
-      <div class="modal-actions">
+      <input id="fBarcode" type="hidden" />
+      <input id="fImg" type="hidden" />
+      <input id="fBrand" type="hidden" />
+      <input id="fSource" type="hidden" />
+
+      <div class="sheet-actions">
         <button id="cancelItemBtn" class="btn btn-ghost">ביטול</button>
-        <button id="saveItemBtn" class="btn btn-primary">הוסף לעגלה</button>
+        <button id="saveItemBtn" class="btn btn-accent">הוסף לעגלה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RECEIPT SHEET ============ -->
+  <div id="receiptSheet" class="sheet-backdrop hidden">
+    <div class="sheet sheet-tall">
+      <div class="sheet-grip"></div>
+      <div class="receipt-head-actions">
+        <button id="closeReceiptBtn" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <span id="receiptSheetTitle">הקבלה שלך</span>
+        <button id="shareReceiptBtn" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></button>
+      </div>
+
+      <div id="receiptPaper" class="receipt-paper">
+        <div class="rp-perf top"></div>
+        <div class="rp-body">
+          <div class="rp-store" id="rpStore">החנות שלי</div>
+          <div class="rp-tag">קבלה · חשבונית מס</div>
+          <div class="rp-meta" id="rpMeta"></div>
+          <div class="rp-rule"></div>
+          <div id="rpItems" class="rp-items"></div>
+          <div class="rp-rule dashed"></div>
+          <div class="rp-totline"><span>סכום ביניים</span><span id="rpSub">₪0.00</span></div>
+          <div class="rp-totline"><span>מע״מ 18% (כלול)</span><span id="rpVat">₪0.00</span></div>
+          <div class="rp-totline grand"><span>סה״כ לתשלום</span><span id="rpTotal">₪0.00</span></div>
+          <div class="rp-rule"></div>
+          <svg id="rpBarcode" class="rp-barcode" preserveAspectRatio="none"></svg>
+          <div class="rp-code" id="rpCode"></div>
+          <div class="rp-thanks">תודה שקנית! נתראה בפעם הבאה ♥</div>
+        </div>
+        <div class="rp-perf bottom"></div>
+      </div>
+
+      <div class="sheet-actions" id="receiptLiveActions">
+        <button id="clearCartBtn" class="btn btn-ghost">נקה</button>
+        <button id="saveReceiptBtn" class="btn btn-accent">שמור קבלה ☁</button>
       </div>
     </div>
   </div>
@@ -115,6 +195,8 @@
   <canvas id="captureCanvas" class="hidden"></canvas>
 
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
