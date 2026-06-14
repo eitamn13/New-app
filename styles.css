@@ -306,6 +306,14 @@ svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width:
 .src-badge.off { background: rgba(56,225,176,.16); color: var(--accent); }
 .src-badge.cloud { background: rgba(243,201,105,.16); color: var(--gold); }
 .src-badge.new { background: rgba(255,255,255,.08); color: var(--txt-2); }
+.mini-btn {
+  margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ink-3); border: 1px solid var(--line); color: var(--accent);
+  font-family: var(--font); font-size: .78rem; font-weight: 700;
+  padding: 7px 12px; border-radius: 11px; cursor: pointer;
+}
+.mini-btn svg { width: 15px; height: 15px; }
+.mini-btn:active { transform: scale(.95); }
 
 .field { display: block; margin-bottom: 14px; }
 .field > span { display: block; font-size: .76rem; color: var(--txt-3); margin-bottom: 6px; font-weight: 600; }

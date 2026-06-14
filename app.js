@@ -188,8 +188,27 @@
 
   function setItemImage(src) {
     const img = $("itemImg"), ph = $("itemImgPlaceholder");
-    if (src) { img.src = src; img.hidden = false; ph.style.display = "none"; $("fImg").value = src; }
-    else { img.hidden = true; ph.style.display = ""; }
+    if (src) { img.crossOrigin = "anonymous"; img.src = src; img.hidden = false; ph.style.display = "none"; $("fImg").value = src; }
+    else { img.hidden = true; ph.style.display = ""; $("fImg").value = ""; }
+  }
+
+  /* ---------- העלאת תמונה ל-Supabase Storage ---------- */
+  function dataUrlToBlob(dataUrl) {
+    const [head, b64] = dataUrl.split(",");
+    const mime = (head.match(/:(.*?);/) || [, "image/jpeg"])[1];
+    const bin = atob(b64); const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  async function uploadPhoto(dataUrl) {
+    if (!sb || !dataUrl || !dataUrl.startsWith("data:")) return dataUrl || null;
+    try {
+      const blob = dataUrlToBlob(dataUrl);
+      const path = "p/" + Date.now() + "_" + Math.random().toString(36).slice(2, 8) + ".jpg";
+      const { error } = await sb.storage.from("rcpt-photos").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+      if (error) throw error;
+      return sb.storage.from("rcpt-photos").getPublicUrl(path).data.publicUrl;
+    } catch (e) { console.warn("upload failed", e); return null; }
   }
   function setBadge(cls, txt) {
     const b = $("itemBadge");
@@ -202,9 +221,16 @@
     const name = $("fName").value.trim() || "מוצר ללא שם";
     const price = parseFloat($("fPrice").value) || 0;
     const qty = Math.max(1, parseInt($("fQty").value) || 1);
-    const image_url = $("fImg").value || null;
+    let image_url = $("fImg").value || null;
     const brand = $("fBrand").value || null;
     const source = $("fSource").value || "manual";
+
+    // תמונה שצולמה (data URL) — מעלים לאחסון בענן ושומרים URL קצר
+    if (image_url && image_url.startsWith("data:")) {
+      const btn = $("saveItemBtn"); btn.disabled = true; btn.textContent = "מעלה תמונה…";
+      image_url = (await uploadPhoto(image_url)) || null;
+      btn.disabled = false; btn.textContent = "הוסף לעגלה";
+    }
 
     const existing = barcode ? state.cart.find((i) => i.barcode === barcode) : null;
     if (existing) { existing.qty += qty; existing.price = price; existing.name = name; existing.image_url = image_url; }
@@ -408,11 +434,33 @@
     catalogTimer = setTimeout(() => loadCatalog(q), 280);
   });
 
-  /* ============ SHARE / PRINT ============ */
+  /* ============ EXPORT / SHARE (image) ============ */
+  async function renderReceiptImage() {
+    if (typeof html2canvas === "undefined") return null;
+    try {
+      const canvas = await html2canvas($("receiptPaper"), { backgroundColor: "#fbf7ee", scale: 2, useCORS: true, logging: false });
+      return await new Promise((res) => canvas.toBlob((b) => res(b), "image/png", 0.95));
+    } catch (e) { console.warn("render image failed", e); return null; }
+  }
   async function shareReceipt() {
     const code = ($("rpCode").textContent || "").replace(/\*/g, "");
     const t = viewingSaved ? { total: viewingSaved.total, count: viewingSaved.item_count } : cartTotals();
-    const text = `קבלה מ${state.storeName}\nסה״כ ${ils(t.total)} · ${t.count} פריטים\nמס׳ ${code}`;
+    const text = `קבלה מ${state.storeName} · סה״כ ${ils(t.total)} · מס׳ ${code}`;
+    toast("מכין תמונה…");
+    const blob = await renderReceiptImage();
+    if (blob) {
+      const file = new File([blob], "receipt-" + code + ".png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], text }); return; } catch {}
+      }
+      // הורדה
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = file.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast("הקבלה הורדה כתמונה ✓", "ok");
+      return;
+    }
     if (navigator.share) { try { await navigator.share({ title: "קבלה", text }); return; } catch {} }
     window.print();
   }
@@ -429,6 +477,24 @@
   $("itemSheet").addEventListener("click", (e) => { if (e.target === $("itemSheet")) closeItem(); });
   $("qtyMinus").addEventListener("click", () => { const f = $("fQty"); f.value = Math.max(1, (+f.value || 1) - 1); });
   $("qtyPlus").addEventListener("click", () => { const f = $("fQty"); f.value = (+f.value || 1) + 1; });
+  $("capturePhotoBtn").addEventListener("click", () => $("photoInput").click());
+  $("photoInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      // דחיסה לפני העלאה
+      const im = new Image();
+      im.onload = () => {
+        const c = document.createElement("canvas"), s = Math.min(1, 600 / im.width);
+        c.width = im.width * s; c.height = im.height * s;
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        setItemImage(c.toDataURL("image/jpeg", 0.7));
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(file);
+    e.target.value = "";
+  });
 
   $("viewCartBtn").addEventListener("click", openReceiptLive);
   $("closeReceiptBtn").addEventListener("click", () => $("receiptSheet").classList.add("hidden"));

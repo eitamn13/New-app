@@ -125,7 +125,12 @@
           <div id="itemBadge" class="src-badge hidden"></div>
           <h3 id="sheetTitle">פריט חדש</h3>
           <span id="itemBarcodeView" class="mono-sm"></span>
+          <button type="button" id="capturePhotoBtn" class="mini-btn">
+            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            צלם מוצר
+          </button>
         </div>
+        <input id="photoInput" type="file" accept="image/*" capture="environment" hidden />
       </div>
 
       <label class="field"><span>שם המוצר</span>
@@ -196,6 +201,7 @@
 
   <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
