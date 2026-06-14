@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>סורק קבלות</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🧾 סורק קבלות</h1>
+    <span id="storeName" class="store-tag">חנות שלי</span>
+  </header>
+
+  <main id="app">
+    <!-- מסך סורק -->
+    <section id="scannerScreen" class="screen active">
+      <div class="scanner-wrap">
+        <video id="video" playsinline muted></video>
+        <div class="scan-overlay">
+          <div class="scan-frame"></div>
+          <p class="scan-hint">מקם את הברקוד בתוך המסגרת</p>
+        </div>
+        <div id="scanStatus" class="scan-status">המצלמה כבויה</div>
+      </div>
+
+      <div class="scanner-controls">
+        <button id="startCamBtn" class="btn btn-primary">📷 הפעל מצלמה</button>
+        <button id="stopCamBtn" class="btn btn-ghost hidden">⏹ עצור</button>
+        <button id="manualBtn" class="btn btn-ghost">⌨️ הזנה ידנית</button>
+      </div>
+
+      <div class="cart-summary" id="cartSummary">
+        <div class="cart-summary-row">
+          <span>פריטים בעגלה</span>
+          <strong id="cartCount">0</strong>
+        </div>
+        <div class="cart-summary-row total">
+          <span>סה"כ לתשלום</span>
+          <strong id="cartTotal">₪0.00</strong>
+        </div>
+        <button id="goReceiptBtn" class="btn btn-primary full" disabled>צפה בקבלה ←</button>
+      </div>
+    </section>
+
+    <!-- מסך קבלה -->
+    <section id="receiptScreen" class="screen">
+      <div class="receipt-toolbar">
+        <button id="backToScanBtn" class="btn btn-ghost">→ חזרה לסריקה</button>
+        <button id="printBtn" class="btn btn-primary">🖨️ הדפס / שמור</button>
+      </div>
+
+      <div id="receipt" class="receipt">
+        <div class="r-header">
+          <div class="r-store" id="rStore">חנות שלי</div>
+          <div class="r-sub" id="rSub">קבלה / חשבונית מס</div>
+          <div class="r-meta" id="rMeta"></div>
+        </div>
+        <div class="r-divider"></div>
+        <div class="r-cols">
+          <span>פריט</span>
+          <span>סה"כ</span>
+        </div>
+        <div class="r-divider dashed"></div>
+        <div id="rItems" class="r-items"></div>
+        <div class="r-divider dashed"></div>
+        <div class="r-totals">
+          <div class="r-line"><span>מספר פריטים</span><span id="rCount">0</span></div>
+          <div class="r-line"><span>מע"מ (18%) כלול</span><span id="rVat">₪0.00</span></div>
+          <div class="r-line grand"><span>סה"כ לתשלום</span><span id="rTotal">₪0.00</span></div>
+        </div>
+        <div class="r-divider"></div>
+        <div class="r-barcode" id="rBarcode"></div>
+        <div class="r-thanks">תודה ולהתראות! 🙏</div>
+      </div>
+
+      <button id="newReceiptBtn" class="btn btn-danger full">קבלה חדשה (נקה עגלה)</button>
+    </section>
+  </main>
+
+  <!-- מודאל הוספת פריט -->
+  <div id="itemModal" class="modal hidden">
+    <div class="modal-card">
+      <h2 id="modalTitle">פריט נסרק</h2>
+      <div id="capturedPreview" class="captured-preview hidden">
+        <img id="capturedImg" alt="תמונת מוצר" />
+      </div>
+      <label class="field">
+        <span>ברקוד</span>
+        <input id="fBarcode" type="text" inputmode="numeric" placeholder="הזן/סרוק ברקוד" />
+      </label>
+      <label class="field">
+        <span>שם מוצר</span>
+        <input id="fName" type="text" placeholder="לדוגמה: חלב 3%" />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>מחיר (₪)</span>
+          <input id="fPrice" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00" />
+        </label>
+        <label class="field">
+          <span>כמות</span>
+          <input id="fQty" type="number" step="1" min="1" value="1" inputmode="numeric" />
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelItemBtn" class="btn btn-ghost">ביטול</button>
+        <button id="saveItemBtn" class="btn btn-primary">הוסף לעגלה</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="captureCanvas" class="hidden"></canvas>
+
+  <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
